@@ -69,6 +69,12 @@
     font-size:22px; color:#fff; transition:opacity .45s, transform .45s;
   }
   .tile.gone{opacity:0; transform:scale(.2) rotate(20deg); pointer-events:none;}
+  #catBehind{position:absolute; inset:0;}
+  #catBehind img{width:100%; height:100%; object-fit:cover;}
+  .stage-mini img, .bigcat img{width:100%; height:100%; object-fit:contain;}
+  .stage-mini, .bigcat{display:flex; align-items:center; justify-content:center;}
+  .card img{width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:14px;}
+  .lockart{width:100%; aspect-ratio:1/1; display:flex; align-items:center; justify-content:center; font-size:44px; background:#ffe1ee; border-radius:14px; color:#ffb3d1;}
 
   .prompt{
     text-align:center; font-size:clamp(40px,13vw,58px); font-weight:800; margin:2px 0;
@@ -203,6 +209,15 @@ const CATS = [
   {name:"Pipa",   skin:"#ffe6cf", hair:"#6fe0a0", eye:"#1eb877", outfit:"#22c07a", style:1, acc:"heart",      tag:"la alegre 💚"},
   {name:"Yuki",   skin:"#ffeadd", hair:"#e6ecff", eye:"#ff9ec4", outfit:"#c9b6ff", style:2, acc:"crown",      tag:"la reina 👑"},
 ];
+
+/* real illustration for each idol (falls back to SVG if missing) */
+function catIMG(c, cover){
+  const f = c.name.toLowerCase();
+  const fit = cover ? 'cover' : 'contain';
+  return `<img src="art/${f}.png" alt="${c.name}" loading="eager"
+    style="width:100%;height:100%;object-fit:${fit};display:block;border-radius:inherit"
+    onerror="this.outerHTML=catSVG(CATS.find(x=>x.name==='${c.name}'), '${cover?'slice':'meet'}')">`;
+}
 
 /* darken(<0) / lighten(>0) a hex color */
 function shade(hex,p){
@@ -395,7 +410,7 @@ function startSession(){
   show('play');
   buildTiles();
   buildPad();
-  document.getElementById('catBehind').innerHTML = catSVG(session.cat, 'slice');
+  document.getElementById('catBehind').innerHTML = catIMG(session.cat, true);
   updatePieces();
   askNext();
 }
@@ -473,7 +488,7 @@ function winSession(){
   const cat=session.cat;
   const already = S.band.includes(cat.name);
   if(!already){ S.band.push(cat.name); save(); }
-  document.getElementById('winCat').innerHTML = catSVG(cat);
+  document.getElementById('winCat').innerHTML = catIMG(cat, false);
   document.getElementById('winName').textContent = already?`¡${cat.name} otra vez! 🎶`:`¡${cat.name} entró a tu banda!`;
   document.getElementById('winMsg').textContent = `${cat.name}, ${cat.tag} — ¡ganaste todas las piezas! 🧩🎉`;
   show('win');
@@ -489,7 +504,7 @@ function renderCollection(){
   CATS.forEach(c=>{
     const has=S.band.includes(c.name);
     const d=document.createElement('div'); d.className="card"+(has?"":" locked");
-    d.innerHTML = catSVG(c) + `<div class="nm">${has?c.name:"???"}</div>`;
+    d.innerHTML = (has? catIMG(c, false) : `<div class="lockart">❔</div>`) + `<div class="nm">${has?c.name:"???"}</div>`;
     g.appendChild(d);
   });
   document.getElementById('bandCount').textContent = `${S.band.length} de ${CATS.length} gatitas 🌟`;
@@ -497,7 +512,7 @@ function renderCollection(){
 function renderHome(){
   const st=document.getElementById('homeStage');
   const last = S.band.length? CATS[(S.band.length-1)%CATS.length] : CATS[0];
-  st.innerHTML = catSVG(last);
+  st.innerHTML = catIMG(last, false);
   const tip=document.getElementById('homeTip');
   tip.textContent = S.band.length
     ? `¡Ya tenés ${S.band.length} gatita(s)! ¿Sumamos otra? 🎤`
