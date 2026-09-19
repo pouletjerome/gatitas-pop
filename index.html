@@ -111,6 +111,35 @@
   .confetti{position:fixed; top:-40px; font-size:24px; pointer-events:none; animation:fall linear forwards; z-index:50;}
   @keyframes fall{to{transform:translateY(110vh) rotate(540deg); opacity:.9;}}
 
+  /* --- WIN animations --- */
+  .bigcat{position:relative;}
+  .pop-in{animation:popin .7s cubic-bezier(.2,1.4,.5,1) both, dance 2.4s ease-in-out .7s infinite;}
+  @keyframes popin{
+    0%{transform:scale(.2) translateY(40px); opacity:0;}
+    60%{transform:scale(1.12) translateY(-6px); opacity:1;}
+    80%{transform:scale(.96) translateY(0);}
+    100%{transform:scale(1) translateY(0); opacity:1;}
+  }
+  @keyframes dance{
+    0%,100%{transform:translateY(0) rotate(-2deg);}
+    25%{transform:translateY(-8px) rotate(2deg);}
+    50%{transform:translateY(0) rotate(2deg);}
+    75%{transform:translateY(-8px) rotate(-2deg);}
+  }
+  .speech{
+    position:relative; max-width:300px; margin:0 auto 6px; background:#fff; color:var(--ink);
+    border:3px solid var(--pink); border-radius:20px; padding:12px 18px; font-size:19px; font-weight:800;
+    box-shadow:0 5px 0 #f2c6d7; opacity:0; transform:scale(.5);
+  }
+  .speech.show{animation:bubblein .5s cubic-bezier(.2,1.5,.4,1) .5s both, wobble 2s ease-in-out 1s infinite;}
+  .speech::after{content:""; position:absolute; bottom:-16px; left:50%; transform:translateX(-50%);
+    border:9px solid transparent; border-top-color:var(--pink);}
+  .speech::before{content:""; position:absolute; bottom:-11px; left:50%; transform:translateX(-50%);
+    border:7px solid transparent; border-top-color:#fff; z-index:1;}
+  @keyframes bubblein{from{opacity:0; transform:scale(.4) translateY(10px);} to{opacity:1; transform:scale(1) translateY(0);}}
+  @keyframes wobble{0%,100%{transform:rotate(-1.5deg);}50%{transform:rotate(1.5deg);}}
+  #win .bubble{animation:none;}
+
   .settings label{display:flex; align-items:center; justify-content:space-between; background:#fff; border-radius:14px; padding:12px 14px; margin:6px 0; box-shadow:0 3px 0 #f2c6d7; font-size:17px;}
   .settings input[type=checkbox]{width:26px; height:26px;}
   .chips{display:flex; flex-wrap:wrap; gap:8px; margin:8px 0;}
@@ -159,7 +188,8 @@
   <!-- WIN -->
   <section id="win" class="screen">
     <div class="center">
-      <div class="bigcat" id="winCat"></div>
+      <div class="speech" id="winSpeech"><span id="winSpeechTxt">¡Gracias!</span></div>
+      <div class="bigcat pop-in" id="winCat"></div>
       <h1 id="winName">¡Nueva Gatita!</h1>
       <div class="bubble" id="winMsg">¡Entró a tu banda! 🎉</div>
       <button class="btn big yellow" onclick="startSession()">▶ Otra ronda</button>
@@ -181,12 +211,17 @@
   <!-- SETTINGS (para papá/mamá) -->
   <section id="settings" class="screen">
     <h1>⚙️ Para los papás</h1>
-    <div class="sub">Elegí en qué está practicando Mila</div>
+    <div class="sub">Configurá el juego</div>
+    <label class="settings" style="display:block">👧 Nombre de la niña
+      <input type="text" id="kidName" value="Mila" maxlength="14"
+        style="width:100%;margin-top:6px;border:2px solid var(--pink2);border-radius:12px;padding:10px 12px;font-size:18px;font-family:inherit;color:var(--ink)">
+    </label>
     <div style="font-weight:700;margin-top:6px">Tablas de multiplicar / dividir:</div>
     <div class="chips" id="tableChips"></div>
     <div class="settings">
       <label>➗ Incluir divisiones <input type="checkbox" id="optDiv" checked></label>
       <label>🔊 Sonidos <input type="checkbox" id="optSound" checked></label>
+      <label>🗣️ Las gatitas hablan (voz) <input type="checkbox" id="optVoice" checked></label>
     </div>
     <div class="row">
       <button class="btn mint" onclick="saveSettings()">✔ Guardar</button>
@@ -200,14 +235,14 @@
 <script>
 /* ================= DATA: las gatitas idol de la banda ================= */
 const CATS = [
-  {name:"Kimi",   skin:"#ffe0c8", hair:"#ff77b0", eye:"#ff2f83", outfit:"#ff5c9e", style:1, acc:"bow",        tag:"la líder ✨"},
-  {name:"Nabi",   skin:"#ffe3d0", hair:"#b18bff", eye:"#7b52ff", outfit:"#8a63e0", style:2, acc:"headphones", tag:"la del baile 💜"},
-  {name:"Mochi",  skin:"#ffe6cf", hair:"#ffcf3f", eye:"#f39b00", outfit:"#ffb300", style:3, acc:"star",       tag:"la brillante ⭐"},
-  {name:"Sora",   skin:"#ffe2d4", hair:"#5ec8ff", eye:"#1f9be0", outfit:"#22a7e0", style:1, acc:"micro",      tag:"la voz 🎤"},
-  {name:"Rosita", skin:"#ffdfc9", hair:"#ff9a9a", eye:"#ff5a5a", outfit:"#ff6b6b", style:2, acc:"flower",     tag:"la dulce 🌸"},
-  {name:"Luna",   skin:"#ffe3d6", hair:"#8f9bff", eye:"#6c5ce7", outfit:"#6c5ce7", style:3, acc:"moon",       tag:"la soñadora 🌙"},
-  {name:"Pipa",   skin:"#ffe6cf", hair:"#6fe0a0", eye:"#1eb877", outfit:"#22c07a", style:1, acc:"heart",      tag:"la alegre 💚"},
-  {name:"Yuki",   skin:"#ffeadd", hair:"#e6ecff", eye:"#ff9ec4", outfit:"#c9b6ff", style:2, acc:"crown",      tag:"la reina 👑"},
+  {name:"Kimi",   skin:"#ffe0c8", hair:"#ff77b0", eye:"#ff2f83", outfit:"#ff5c9e", style:1, acc:"bow",        tag:"la líder ✨",   thanks:["¡Gracias, {n}! ¡Sos increíble!","¡Lo lograste, {n}! ¡Bienvenida a la banda!"]},
+  {name:"Nabi",   skin:"#ffe3d0", hair:"#b18bff", eye:"#7b52ff", outfit:"#8a63e0", style:2, acc:"headphones", tag:"la del baile 💜", thanks:["¡Gracias, {n}! ¡Vamos a bailar juntas!","¡Qué bien, {n}! ¡Sos súper lista!"]},
+  {name:"Mochi",  skin:"#ffe6cf", hair:"#ffcf3f", eye:"#f39b00", outfit:"#ffb300", style:3, acc:"star",       tag:"la brillante ⭐", thanks:["¡Gracias, {n}! ¡Brillás como una estrella!","¡Sos genial, {n}! ¡Me hiciste muy feliz!"]},
+  {name:"Sora",   skin:"#ffe2d4", hair:"#5ec8ff", eye:"#1f9be0", outfit:"#22a7e0", style:1, acc:"micro",      tag:"la voz 🎤",   thanks:["¡Gracias, {n}! ¡Cantemos juntas!","¡Lo hiciste re bien, {n}!"]},
+  {name:"Rosita", skin:"#ffdfc9", hair:"#ff9a9a", eye:"#ff5a5a", outfit:"#ff6b6b", style:2, acc:"flower",     tag:"la dulce 🌸", thanks:["¡Gracias, {n}! ¡Sos muy dulce!","¡Te quiero, {n}! ¡Gracias por encontrarme!"]},
+  {name:"Luna",   skin:"#ffe3d6", hair:"#8f9bff", eye:"#6c5ce7", outfit:"#6c5ce7", style:3, acc:"moon",       tag:"la soñadora 🌙", thanks:["¡Gracias, {n}! ¡Sos una campeona!","¡Qué linda sos, {n}! ¡Gracias!"]},
+  {name:"Pipa",   skin:"#ffe6cf", hair:"#6fe0a0", eye:"#1eb877", outfit:"#22c07a", style:1, acc:"heart",      tag:"la alegre 💚", thanks:["¡Gracias, {n}! ¡Qué alegría!","¡Yupi! ¡Gracias {n}, sos la mejor!"]},
+  {name:"Yuki",   skin:"#ffeadd", hair:"#e6ecff", eye:"#ff9ec4", outfit:"#c9b6ff", style:2, acc:"crown",      tag:"la reina 👑", thanks:["¡Gracias, {n}! ¡Sos una reina de las mates!","¡Bravo, {n}! ¡Me encanta tu banda!"]},
 ];
 
 /* real illustration for each idol (falls back to SVG if missing) */
@@ -346,7 +381,7 @@ function catSVG(c, fit='meet'){
 }
 
 /* ================= STATE ================= */
-const DEFAULT = { tables:[2,3,4,5], div:true, sound:true, band:[], strength:{} };
+const DEFAULT = { name:"Mila", tables:[2,3,4,5], div:true, sound:true, voice:true, band:[], strength:{} };
 let S = load();
 function load(){
   try{ const r = JSON.parse(localStorage.getItem("gatitas")); if(r) return Object.assign({}, DEFAULT, r); }catch(e){}
@@ -488,12 +523,39 @@ function winSession(){
   const cat=session.cat;
   const already = S.band.includes(cat.name);
   if(!already){ S.band.push(cat.name); save(); }
-  document.getElementById('winCat').innerHTML = catIMG(cat, false);
+  const kid = (S.name||"Mila").trim() || "Mila";
+  const line = pick(cat.thanks||["¡Gracias, {n}!"]).replace(/\{n\}/g, kid);
+  const winCat=document.getElementById('winCat');
+  winCat.innerHTML = catIMG(cat, false);
+  // restart entrance animation
+  winCat.classList.remove('pop-in'); void winCat.offsetWidth; winCat.classList.add('pop-in');
   document.getElementById('winName').textContent = already?`¡${cat.name} otra vez! 🎶`:`¡${cat.name} entró a tu banda!`;
   document.getElementById('winMsg').textContent = `${cat.name}, ${cat.tag} — ¡ganaste todas las piezas! 🧩🎉`;
+  // speech bubble
+  const sp=document.getElementById('winSpeech');
+  document.getElementById('winSpeechTxt').textContent = line;
+  sp.classList.remove('show'); void sp.offsetWidth; sp.classList.add('show');
   show('win');
   confetti();
   beep(880); setTimeout(()=>beep(1040),120); setTimeout(()=>beep(1240),240);
+  // she says thank you out loud (Spanish), after the pop-in
+  setTimeout(()=>speak(line), 750);
+}
+
+/* text-to-speech in Spanish (browser voices) */
+let __voices=[];
+function loadVoices(){ try{ __voices = window.speechSynthesis.getVoices()||[]; }catch(e){} }
+if('speechSynthesis' in window){ loadVoices(); window.speechSynthesis.onvoiceschanged=loadVoices; }
+function speak(txt){
+  if(!S.voice || !('speechSynthesis' in window)) return;
+  try{
+    window.speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(txt);
+    u.lang='es-ES'; u.rate=0.95; u.pitch=1.35; u.volume=1;
+    const v=__voices.find(v=>/es(-|_)?(ES|MX|US|419|AR)/i.test(v.lang)) || __voices.find(v=>/^es/i.test(v.lang));
+    if(v) u.voice=v;
+    window.speechSynthesis.speak(u);
+  }catch(e){}
 }
 
 function quitToHome(){ show('home'); renderHome(); }
@@ -532,12 +594,16 @@ function renderSettings(){
   }
   document.getElementById('optDiv').checked=S.div;
   document.getElementById('optSound').checked=S.sound;
+  document.getElementById('optVoice').checked=S.voice;
+  document.getElementById('kidName').value=S.name||"Mila";
 }
 function saveSettings(){
   const chips=[...document.querySelectorAll('#tableChips .chip.on')].map(x=>+x.dataset.t);
   S.tables = chips.length?chips:[2,3];
   S.div = document.getElementById('optDiv').checked;
   S.sound = document.getElementById('optSound').checked;
+  S.voice = document.getElementById('optVoice').checked;
+  S.name = (document.getElementById('kidName').value||"Mila").trim() || "Mila";
   save(); show('home'); renderHome();
 }
 function resetAll(){
